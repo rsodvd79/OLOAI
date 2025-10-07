@@ -4,8 +4,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,10 +13,13 @@ namespace OutlookAiAddIn.Services
 {
     internal sealed class OpenAIService : IDisposable
     {
-        private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+            },
+            NullValueHandling = NullValueHandling.Ignore
         };
 
         private readonly HttpClient _httpClient;
@@ -56,7 +59,7 @@ namespace OutlookAiAddIn.Services
                 }
             };
 
-            var payload = JsonSerializer.Serialize(request, SerializerOptions);
+            var payload = JsonConvert.SerializeObject(request, SerializerSettings);
             using var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
             using var response = await _httpClient.PostAsync("chat/completions", content, cancellationToken).ConfigureAwait(false);
@@ -67,7 +70,7 @@ namespace OutlookAiAddIn.Services
                 throw new InvalidOperationException($"OpenAI API error: {response.StatusCode} - {rawBody}");
             }
 
-            var completion = JsonSerializer.Deserialize<ChatCompletionResponse>(rawBody, SerializerOptions);
+            var completion = JsonConvert.DeserializeObject<ChatCompletionResponse>(rawBody, SerializerSettings);
             if (completion == null || completion.Choices == null || completion.Choices.Length == 0)
             {
                 throw new InvalidOperationException("Risposta OpenAI non valida o vuota.");
@@ -162,16 +165,16 @@ namespace OutlookAiAddIn.Services
 
         private sealed class ChatCompletionRequest
         {
-            [JsonPropertyName("model")]
+            [JsonProperty("model")]
             public string Model { get; set; }
 
-            [JsonPropertyName("messages")]
+            [JsonProperty("messages")]
             public ChatMessage[] Messages { get; set; }
 
-            [JsonPropertyName("max_tokens")]
+            [JsonProperty("max_tokens")]
             public int MaxTokens { get; set; }
 
-            [JsonPropertyName("temperature")]
+            [JsonProperty("temperature")]
             public double Temperature { get; set; }
         }
 
@@ -187,22 +190,22 @@ namespace OutlookAiAddIn.Services
                 Content = content;
             }
 
-            [JsonPropertyName("role")]
+            [JsonProperty("role")]
             public string Role { get; set; }
 
-            [JsonPropertyName("content")]
+            [JsonProperty("content")]
             public string Content { get; set; }
         }
 
         private sealed class ChatCompletionResponse
         {
-            [JsonPropertyName("choices")]
+            [JsonProperty("choices")]
             public ChatChoice[] Choices { get; set; }
         }
 
         private sealed class ChatChoice
         {
-            [JsonPropertyName("message")]
+            [JsonProperty("message")]
             public ChatMessage Message { get; set; }
         }
     }

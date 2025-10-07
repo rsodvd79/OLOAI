@@ -1,6 +1,10 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.props')" />
   <PropertyGroup>
+    <UseOfficeStubs Condition="'$(UseOfficeStubs)'==''">false</UseOfficeStubs>
+    <OfficeStubDefine Condition="'$(UseOfficeStubs)'=='true'">;OFFICE_STUBS</OfficeStubDefine>
+  </PropertyGroup>
+  <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{8F5D7EFA-67D5-4F63-8E46-0FDB45C1FD13}</ProjectGuid>
@@ -8,22 +12,23 @@
     <RootNamespace>OutlookAiAddIn</RootNamespace>
     <AssemblyName>OutlookAiAddIn</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <DefineConstants>VSTO40</DefineConstants>
+    <DefineConstants>VSTO40$(OfficeStubDefine)</DefineConstants>
     <FileAlignment>512</FileAlignment>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\\Debug\\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;VSTO40</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;VSTO40$(OfficeStubDefine)</DefineConstants>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\\Release\\</OutputPath>
-    <DefineConstants>TRACE;VSTO40</DefineConstants>
+    <DefineConstants>TRACE;VSTO40$(OfficeStubDefine)</DefineConstants>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
@@ -35,6 +40,27 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\\packages\\Newtonsoft.Json.13.0.3\\lib\\net45\\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseOfficeStubs)' == 'true'">
+    <Reference Include="Microsoft.Office.Interop.Outlook">
+      <HintPath>..\\packages\\Microsoft.Office.Interop.Outlook.15.0.4797.1004\\lib\\net20\\Microsoft.Office.Interop.Outlook.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Word">
+      <HintPath>..\\packages\\Microsoft.Office.Interop.Word.15.0.4797.1004\\lib\\net20\\Microsoft.Office.Interop.Word.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Microsoft.Office.Core">
+      <HintPath>..\\packages\\ExcelDna.Interop.15.0.1\\lib\\net452\\Office.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseOfficeStubs)' != 'true'">
     <Reference Include="Microsoft.Office.Interop.Outlook, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
       <EmbedInteropTypes>true</EmbedInteropTypes>
     </Reference>
@@ -66,9 +92,11 @@
     <Compile Include="UI\\AiTaskPane.Designer.cs">
       <DependentUpon>AiTaskPane.cs</DependentUpon>
     </Compile>
+    <Compile Include="Stubs\\OfficeStubs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VSTO)" Condition=" '$(VSTO)' != '' " />
   <Import Project="$(MSBuildToolsPath)\\Microsoft.CSharp.targets" />

@@ -1,0 +1,5 @@
+nuget.exe
+.vscode/
+bin/
+obj/
+packages/

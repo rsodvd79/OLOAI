@@ -1,5 +1,4 @@
 using System;
-using Microsoft.Office.Core;
 using Microsoft.Office.Tools;
 
 namespace OutlookAiAddIn
@@ -86,7 +85,7 @@ namespace OutlookAiAddIn
             Globals.ThisAddIn = null;
         }
 
-        protected override IRibbonExtensibility CreateRibbonExtensibilityObject()
+        protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
         {
             return new Ribbon.AiRibbon();
         }

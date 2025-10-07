@@ -7,14 +7,14 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace OutlookAiAddIn.UI
 {
-    public partial class AiTaskPane : UserControl
+    internal partial class AiTaskPane : UserControl
     {
         private readonly OpenAIService _openAiService;
         private readonly OutlookContextService _contextService;
         private CancellationTokenSource _cts;
         private AiInteractionMode _mode = AiInteractionMode.SuggestedReply;
 
-        public AiTaskPane(OpenAIService openAiService, OutlookContextService contextService)
+        internal AiTaskPane(OpenAIService openAiService, OutlookContextService contextService)
         {
             InitializeComponent();
 

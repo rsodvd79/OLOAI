@@ -1,6 +1,6 @@
 namespace OutlookAiAddIn.UI
 {
-    partial class AiTaskPane
+    internal partial class AiTaskPane
     {
         private System.ComponentModel.IContainer components = null;
 
