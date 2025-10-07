@@ -1,0 +1,16 @@
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab idMso="TabMail">
+        <group id="grpOutlookAi" label="Assistente AI">
+          <button id="btnTogglePane" label="Apri pannello" size="large" imageMso="SmartArtGraphicsMoreLayouts" onAction="OnTogglePane" />
+          <menu id="menuAiActions" label="Azioni rapide" imageMso="HappyFace">
+            <button id="btnSuggestReply" label="Suggerisci risposta" onAction="OnSuggestReply" />
+            <button id="btnImproveDraft" label="Migliora bozza" onAction="OnImproveDraft" />
+            <button id="btnProofread" label="Correggi errori" onAction="OnProofread" />
+          </menu>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
