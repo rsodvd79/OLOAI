@@ -12,7 +12,7 @@ namespace OutlookAiAddIn
 
     public partial class ThisAddIn
     {
-        internal CustomTaskPane AiTaskPaneHost { get; private set; }
+        internal object AiTaskPaneHost { get; private set; }
         internal UI.AiTaskPane AiTaskPaneControl { get; private set; }
         internal Services.OpenAIService OpenAIService { get; private set; }
         internal Services.OutlookContextService OutlookContextService { get; private set; }
@@ -25,9 +25,10 @@ namespace OutlookAiAddIn
             OutlookContextService = new Services.OutlookContextService(this.Application);
 
             AiTaskPaneControl = new UI.AiTaskPane(OpenAIService, OutlookContextService);
-            AiTaskPaneHost = this.CustomTaskPanes.Add(AiTaskPaneControl, "Assistente AI");
-            AiTaskPaneHost.Visible = false;
-            AiTaskPaneHost.Width = 420;
+            var pane = this.CustomTaskPanes.Add(AiTaskPaneControl, "Assistente AI");
+            AiTaskPaneHost = pane;
+            ((dynamic)AiTaskPaneHost).Visible = false;
+            ((dynamic)AiTaskPaneHost).Width = 420;
 
             this.Application.ItemSend += Application_ItemSend;
         }
@@ -44,7 +45,7 @@ namespace OutlookAiAddIn
                 return;
             }
 
-            AiTaskPaneHost.Visible = visible;
+            ((dynamic)AiTaskPaneHost).Visible = visible;
             if (visible)
             {
                 AiTaskPaneControl?.LoadContext();
@@ -58,7 +59,8 @@ namespace OutlookAiAddIn
                 return;
             }
 
-            ShowTaskPane(!AiTaskPaneHost.Visible);
+            bool current = ((dynamic)AiTaskPaneHost).Visible;
+            ShowTaskPane(!current);
         }
 
         internal void TriggerMode(AiInteractionMode mode)
@@ -73,7 +75,7 @@ namespace OutlookAiAddIn
 
             if (AiTaskPaneHost != null)
             {
-                this.CustomTaskPanes.Remove(AiTaskPaneHost);
+                this.CustomTaskPanes.Remove((dynamic)AiTaskPaneHost);
                 AiTaskPaneHost = null;
             }
 

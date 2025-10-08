@@ -4,24 +4,14 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 
 namespace OutlookAiAddIn.Services
 {
     internal sealed class OpenAIService : IDisposable
     {
-        private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
-        {
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy()
-            },
-            NullValueHandling = NullValueHandling.Ignore
-        };
-
         private readonly HttpClient _httpClient;
         private readonly OpenAIOptions _options;
 
@@ -47,40 +37,59 @@ namespace OutlookAiAddIn.Services
         {
             var prompt = PromptFactory.BuildPrompt(mode, emailContext, additionalNotes);
 
-            var request = new ChatCompletionRequest
+            var requestObj = new
             {
-                Model = _options.Model,
-                MaxTokens = _options.MaxTokens,
-                Temperature = _options.Temperature,
-                Messages = new[]
+                model = _options.Model,
+                messages = new object[]
                 {
-                    new ChatMessage("system", PromptFactory.SystemPrompt),
-                    new ChatMessage("user", prompt)
-                }
+                    new { role = "system", content = PromptFactory.SystemPrompt },
+                    new { role = "user", content = prompt }
+                },
+                max_tokens = _options.MaxTokens,
+                temperature = _options.Temperature
             };
 
-            var payload = JsonConvert.SerializeObject(request, SerializerSettings);
-            using var content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-            using var response = await _httpClient.PostAsync("chat/completions", content, cancellationToken).ConfigureAwait(false);
-            var rawBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
+            var serializer = new JavaScriptSerializer();
+            var payload = serializer.Serialize(requestObj);
+            using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
+            using (var response = await _httpClient.PostAsync("chat/completions", content, cancellationToken).ConfigureAwait(false))
             {
-                throw new InvalidOperationException($"OpenAI API error: {response.StatusCode} - {rawBody}");
+                var rawBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException($"OpenAI API error: {response.StatusCode} - {rawBody}");
+                }
+
+                // Parse minimal JSON to extract choices[0].message.content
+                var resp = serializer.DeserializeObject(rawBody) as System.Collections.Generic.Dictionary<string, object>;
+                if (resp == null || !resp.ContainsKey("choices"))
+                {
+                    throw new InvalidOperationException("Risposta OpenAI non valida o vuota.");
+                }
+
+                var choices = resp["choices"] as object[];
+                if (choices == null || choices.Length == 0)
+                {
+                    throw new InvalidOperationException("Risposta OpenAI non valida o vuota.");
+                }
+
+                string firstContent = null;
+                foreach (var c in choices)
+                {
+                    var choiceDict = c as System.Collections.Generic.Dictionary<string, object>;
+                    if (choiceDict != null && choiceDict.ContainsKey("message"))
+                    {
+                        var msg = choiceDict["message"] as System.Collections.Generic.Dictionary<string, object>;
+                        if (msg != null && msg.ContainsKey("content"))
+                        {
+                            firstContent = msg["content"] as string;
+                            if (!string.IsNullOrWhiteSpace(firstContent)) break;
+                        }
+                    }
+                }
+
+                return firstContent == null ? string.Empty : firstContent.Trim();
             }
-
-            var completion = JsonConvert.DeserializeObject<ChatCompletionResponse>(rawBody, SerializerSettings);
-            if (completion == null || completion.Choices == null || completion.Choices.Length == 0)
-            {
-                throw new InvalidOperationException("Risposta OpenAI non valida o vuota.");
-            }
-
-            var text = completion.Choices
-                .Select(choice => choice.Message?.Content)
-                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
-
-            return text?.Trim() ?? string.Empty;
         }
 
         public void Dispose()
@@ -161,52 +170,6 @@ namespace OutlookAiAddIn.Services
 
                 return builder.ToString();
             }
-        }
-
-        private sealed class ChatCompletionRequest
-        {
-            [JsonProperty("model")]
-            public string Model { get; set; }
-
-            [JsonProperty("messages")]
-            public ChatMessage[] Messages { get; set; }
-
-            [JsonProperty("max_tokens")]
-            public int MaxTokens { get; set; }
-
-            [JsonProperty("temperature")]
-            public double Temperature { get; set; }
-        }
-
-        private sealed class ChatMessage
-        {
-            public ChatMessage()
-            {
-            }
-
-            public ChatMessage(string role, string content)
-            {
-                Role = role;
-                Content = content;
-            }
-
-            [JsonProperty("role")]
-            public string Role { get; set; }
-
-            [JsonProperty("content")]
-            public string Content { get; set; }
-        }
-
-        private sealed class ChatCompletionResponse
-        {
-            [JsonProperty("choices")]
-            public ChatChoice[] Choices { get; set; }
-        }
-
-        private sealed class ChatChoice
-        {
-            [JsonProperty("message")]
-            public ChatMessage Message { get; set; }
         }
     }
 }

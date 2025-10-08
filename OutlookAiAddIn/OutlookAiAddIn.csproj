@@ -88,7 +88,9 @@
     </Compile>
     <Compile Include="Ribbon\\AiRibbon.cs" />
     <EmbeddedResource Include="Ribbon\\AiRibbon.xml" />
-    <Compile Include="UI\\AiTaskPane.cs" />
+    <Compile Include="UI\\AiTaskPane.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="UI\\AiTaskPane.Designer.cs">
       <DependentUpon>AiTaskPane.cs</DependentUpon>
     </Compile>
