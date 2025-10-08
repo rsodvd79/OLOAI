@@ -3,3 +3,5 @@ nuget.exe
 bin/
 obj/
 packages/
+/.vs
+/OutlookAiAddIn/.vs
